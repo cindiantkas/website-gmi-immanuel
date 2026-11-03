@@ -133,15 +133,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [permohonanList, setPermohonanList] = useState<PermohonanSuratJemaat[]>(INITIAL_PERMOHONAN);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on client mount
+  // Load from storage on client mount
   useEffect(() => {
     try {
-      const savedUser = localStorage.getItem('gmi_user');
+      // Remove any legacy auto-login data from localStorage
+      localStorage.removeItem('gmi_user');
+
+      const savedUser = sessionStorage.getItem('gmi_user');
       if (savedUser) {
         setCurrentUser(JSON.parse(savedUser));
       } else {
-        // Default: logged in as Admin for instant testability
-        setCurrentUser(INITIAL_USERS[0]);
+        // Require login on initial visit
+        setCurrentUser(null);
       }
       
       const savedSurat = localStorage.getItem('gmi_surat');
@@ -174,15 +177,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  // Save to localStorage when state changes
+  // Save to storage when state changes
   useEffect(() => {
     if (!isLoaded) return;
     try {
       if (currentUser) {
-        localStorage.setItem('gmi_user', JSON.stringify(currentUser));
+        sessionStorage.setItem('gmi_user', JSON.stringify(currentUser));
       } else {
-        localStorage.removeItem('gmi_user');
+        sessionStorage.removeItem('gmi_user');
       }
+      localStorage.removeItem('gmi_user');
       localStorage.setItem('gmi_surat', JSON.stringify(suratList));
       localStorage.setItem('gmi_jemaat', JSON.stringify(jemaatList));
       localStorage.setItem('gmi_kegiatan', JSON.stringify(kegiatanList));
@@ -293,6 +297,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setCurrentUser(null);
     setSelectedCM(null);
+    sessionStorage.removeItem('gmi_user');
+    localStorage.removeItem('gmi_user');
     showToast('Anda telah keluar dari sistem GMI Digital.', 'info');
   };
 
